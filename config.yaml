@@ -1,0 +1,37 @@
+# Deal Hunter Configuration
+# Edit this file to add/remove sources and tune filters
+
+# Check all sources every N minutes
+poll_interval_minutes: 5
+
+# Filter: only alert on deals at or below this price (USD)
+max_price: 5.00
+
+# Filter: alert on "penny deals" aggressively even if unverified
+penny_keywords:
+  - "penny"
+  - "$0.01"
+  - "0.01"
+  - "clearance"
+  - "ymmv"    # "your mileage may vary" - common clearance signal
+  - "price error"
+  - "glitch"
+
+# Slickdeals RSS feeds — these are free and public
+# Front page is most curated; "new" feed is higher volume / less filtered
+slickdeals_feeds:
+  - name: "Frontpage"
+    url: "https://slickdeals.net/newsearch.php?mode=frontpage&searcharea=deals&searchin=first&rss=1"
+  - name: "Popular Deals"
+    url: "https://slickdeals.net/newsearch.php?mode=popdeals&searcharea=deals&searchin=first&rss=1"
+
+# Retailer JSON endpoints — you'll need to discover these via browser DevTools
+# Format: the URL is polled, response is searched for products at/below max_price
+# Leave empty to skip. See README.md for how to find these.
+retailer_endpoints: []
+  # Example (you'll replace with real ones you discover):
+  # - name: "Target Clearance Example"
+  #   url: "https://redsky.target.com/..."
+  #   price_path: "data.products[].price.current_retail"
+  #   title_path: "data.products[].item.product_description.title"
+  #   link_template: "https://www.target.com/p/-/A-{tcin}"
