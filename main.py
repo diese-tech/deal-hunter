@@ -75,6 +75,8 @@ def run_once(sources, filt, store, notifier, log):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--once", action="store_true", help="Run one scan and exit")
+    parser.add_argument("--test-alert", action="store_true",
+                        help="Send a fake deal to Discord to verify webhook works")
     args = parser.parse_args()
 
     # Load env
@@ -89,6 +91,24 @@ def main():
         log.error("DISCORD_WEBHOOK_URL missing or placeholder. Edit .env first.")
         sys.exit(1)
 
+    # Handle --test-alert before any other setup
+    if args.test_alert:
+        from datetime import datetime, timezone
+        from sources.base import Deal
+        notifier = DiscordNotifier(webhook_url=webhook)
+        fake_deal = Deal(
+            source="TEST",
+            title="🧪 Test Alert — if you see this, Discord works",
+            url="https://example.com/test",
+            price=0.01,
+            original_price=99.99,
+            description="This is a test alert from Deal Hunter. You can ignore/delete it.",
+            found_at=datetime.now(timezone.utc),
+        )
+        ok = notifier.send(fake_deal)
+        log.info(f"Test alert sent: {ok}")
+        sys.exit(0 if ok else 1)
+
     config = load_config()
     sources = build_sources(config)
     if not sources:
@@ -102,16 +122,19 @@ def main():
     store = SeenStore()
     notifier = DiscordNotifier(webhook_url=webhook)
 
-    # First pass — but on cold start, dedup eats everything as "new".
-    # To avoid spamming 50+ deals on first run, we warm the dedup store silently.
-    if not Path("data/seen.db").exists() or _db_is_empty(store):
+    # Cold-start warm-up: seed dedup silently, DON'T also run a scan after.
+    cold_start = not Path("data/seen.db").exists() or _db_is_empty(store)
+    if cold_start:
         log.info("Cold start detected — warming dedup store (no alerts sent).")
         for src in sources:
             raw = src.fetch()
             matched = filt.apply(raw)
             for d in matched:
                 store.mark_seen(d.unique_id(), d.source, d.title)
-        log.info("Dedup warmed. Next scan will alert only on genuinely new deals.")
+        log.info("Dedup warmed. Next scheduled scan will alert on new deals only.")
+        if args.once:
+            # On cold start, --once IS the warm-up. Don't double-scan.
+            return
 
     if args.once:
         run_once(sources, filt, store, notifier, log)
@@ -125,7 +148,6 @@ def main():
         "interval",
         minutes=interval,
         args=[sources, filt, store, notifier, log],
-        next_run_time=None,   # Wait one interval before first run (dedup is warmed)
     )
     log.info(f"Scheduler started. Scanning every {interval} minute(s). Ctrl+C to stop.")
     try:

@@ -1,7 +1,7 @@
 """SQLite-backed dedup store — prevents re-alerting same deal."""
 import logging
 import sqlite3
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Iterable
 
@@ -38,7 +38,7 @@ class SeenStore:
         with self._conn() as c:
             c.execute(
                 "INSERT OR IGNORE INTO seen(id, source, title, first_seen) VALUES (?, ?, ?, ?)",
-                (deal_id, source, title, datetime.utcnow().isoformat()),
+                (deal_id, source, title, datetime.now(timezone.utc).isoformat()),
             )
 
     def filter_unseen(self, deals) -> list:
@@ -53,7 +53,7 @@ class SeenStore:
 
     def prune_older_than(self, days: int = 30):
         """Housekeeping — drop old entries to keep the DB small."""
-        cutoff = (datetime.utcnow() - timedelta(days=days)).isoformat()
+        cutoff = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
         with self._conn() as c:
             cur = c.execute("DELETE FROM seen WHERE first_seen < ?", (cutoff,))
             log.info(f"Pruned {cur.rowcount} old entries.")

@@ -1,6 +1,6 @@
 """Base class all deal sources inherit from."""
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional
 
 
