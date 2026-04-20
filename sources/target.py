@@ -4,6 +4,7 @@ Target exposes its product listing data via redsky.target.com. The `key` in
 the URL is Target's public frontend key — not a secret. Response shape:
   data.search.products[] -> { tcin, item.product_description.title, price.current_retail, ... }
 """
+import html
 import logging
 import uuid
 from typing import List, Optional
@@ -145,7 +146,7 @@ class TargetClearance(DealSource):
             # Title lives in item.product_description.title in full responses.
             item = p.get("item") or {}
             desc = item.get("product_description") or {}
-            title = desc.get("title") or f"Target TCIN {tcin}"
+            title = html.unescape(desc.get("title") or f"Target TCIN {tcin}")
 
             return Deal(
                 source="Target:Clearance",
