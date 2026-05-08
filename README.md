@@ -32,6 +32,12 @@ python main.py
 2. Server settings → Integrations → Webhooks → New Webhook.
 3. Pick the channel, copy the webhook URL into `.env`.
 
+## Required AI Workflow Review
+
+Before beginning AI-assisted implementation, debugging, refactoring, migration, or production fix work in this repository, review [docs/AI_WORKFLOW_GUARDRAILS.md](./docs/AI_WORKFLOW_GUARDRAILS.md).
+
+Default behavior: smallest safe change, lowest blast radius, no unrelated file edits, no speculative rewrites, and explicit consideration of scale, queues, caching, indexes, retries, idempotency, rollback, and operational safety.
+
 ## Adding retailer JSON endpoints
 
 Slickdeals alone will catch a lot. But for first-to-know on specific retailers,
